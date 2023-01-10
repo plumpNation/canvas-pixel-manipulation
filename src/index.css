@@ -1,0 +1,14 @@
+body {
+  margin: 0;
+  background: black;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+#canvas1 {
+  border: 3px solid whitesmoke;
+  margin: auto;
+  width: 800px;
+  height: 450px;
+}
