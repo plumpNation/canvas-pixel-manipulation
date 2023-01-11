@@ -7,7 +7,7 @@ canvas.height = 450;
 
 const image1 = new Image();
 
-image1.src = './pheasant.jpg';
+image1.src = '../pheasant.jpg';
 
 image1.addEventListener('load', () => {
   ctx.drawImage(image1, 0, -200);
@@ -31,4 +31,3 @@ image1.addEventListener('load', () => {
   scannedImage.data = pixels;
   ctx.putImageData(scannedImage, 0, 0);
 });
-
