@@ -4,7 +4,8 @@
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
-    "lib": ["esnext", "DOM"]
+    "lib": ["esnext", "DOM"],
+    "target": "esnext"
   },
   "include": ["src/**/*"]
 }
