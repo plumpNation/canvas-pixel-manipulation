@@ -34,8 +34,8 @@ class Particle {
 
     // //////////////////////
 
-    this.originX = Math.floor(this.x);
-    this.originY = Math.floor(this.y);
+    this.originX = this.x | 0;
+    this.originY = this.y | 0;
   }
 
   draw() {
@@ -73,8 +73,8 @@ class Particle {
     this.vx *= this.effect.friction
     this.vy *= this.effect.friction
 
-    this.x += Math.floor(this.vx + (this.originX - this.x) * this.effect.ease);
-    this.y += Math.floor(this.vy + (this.originY - this.y) * this.effect.ease);
+    this.x += (this.vx + (this.originX - this.x) * this.effect.ease) | 0;
+    this.y += (this.vy + (this.originY - this.y) * this.effect.ease) | 0;
   }
 
   /**
@@ -85,8 +85,8 @@ class Particle {
    * @param {number} height
    */
   warp(width, height) {
-    this.x = Math.floor(Math.random() * width);
-    this.y = Math.floor(Math.random() * height);
+    this.x = (Math.random() * width) | 0;
+    this.y = (Math.random() * height) | 0;
   }
 }
 
@@ -245,15 +245,15 @@ class Effect {
    * in this case the particles.
    */
   update() {
-    const speed = Math.floor(
+    const speed = (
       Math.max(
         this.mouse.vx > 0 ? this.mouse.vx : this.mouse.vx * -1,
         this.mouse.vy > 0 ? this.mouse.vy : this.mouse.vy * -1,
       )
-    );
+    ) | 0;
 
     for (let i = 0, len = this.particles.length; i < len; i += 1) {
-      this.particles[i].update(Math.floor(this.radius * (speed * 2)));
+      this.particles[i].update((this.radius * (speed * 2)) | 0);
     }
   }
 
@@ -286,12 +286,12 @@ loadImage(src)
         // HERE ARE THE KNOBS!!
         height: pcanvas.height,
         width: pcanvas.width,
-        imageScale: 0.3,
+        imageScale: 0.5,
         gap: 5,
         particleSize: 4,
         ease: 0.3,
-        friction: 0,
-        radius: 30,
+        friction: 0.5,
+        radius: 300,
       },
     );
 
