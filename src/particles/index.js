@@ -4,69 +4,54 @@ const {
 } = get2DCanvas('canvas1');
 
 class Particle {
-  /**
-   * @param {number} x
-   * @param {number} y
-   * @param {string} color
-   * @param {number} size
-   * @param {number} ease
-   */
-  constructor(
-    x,
-    y,
-    color = 'black',
-    size = 1,
-    ease = 0.1,
-  ) {
-    /** @type {number} */
-    this.x = x;
-
-    /** @type {number} */
-    this.y = y;
-
-    /** @type {string} */
-    this.color = color || 'black';
-
-    // //////////////////////
-
-    /** @type {number} */
-    this.originX = Math.floor(x);
-
-    /** @type {number} */
-    this.originY = Math.floor(y);
-
-    /** @type {number} */
-    this.size = size || 1;
-
-    // /** @type {number} */
-    // this.vx = 0 // Math.random() * 2 - 1;
-
-    // /** @type {number} */
-    // this.vy = 0 // Math.random() * 2 - 1;
-
-    this.ease = ease;
-  }
-
-  /**
-   * @param {CanvasRenderingContext2D} ctx
-   */
-  draw(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.size, this.size);
-  }
-
+  x = 0;
+  y = 0;
+  color = 'black';
   vx = 0;
   vy = 0;
 
   /**
    *
-   * @param {Effect['mouse']} mouse
-   * @param {number} radius
-   * @param {number} friction
+   * @param {Effect} effect
+   * @param {Object} options
+   * @param {number} [options.x=0]
+   * @param {number} [options.y=0]
+   * @param {string} [options.color='black']
    */
-  update(mouse, radius, friction) {
-    const dx = mouse.x - this.x;
-    const dy = mouse.y - this.y;
+  constructor(
+    effect,
+    {
+      x,
+      y,
+      color,
+    }
+  ) {
+    this.effect = effect;
+
+    this.x = x || this.x;
+    this.y = y || this.y;
+    this.color = color || this.color;
+
+    // //////////////////////
+
+    this.originX = Math.floor(this.x);
+    this.originY = Math.floor(this.y);
+  }
+
+  draw() {
+    this.effect.ctx.fillStyle = this.color;
+
+    this.effect.ctx.fillRect(
+      this.x,
+      this.y,
+      this.effect.particleSize,
+      this.effect.particleSize,
+    );
+  }
+
+  update(speedRadius = 0) {
+    const dx = this.effect.mouse.x - this.x;
+    const dy = this.effect.mouse.y - this.y;
 
     // Euclidean distance (Pythagoras theorem) between the mouse position and the particle.
     // i.e.
@@ -76,30 +61,32 @@ class Particle {
     const distance = dx * dx + dy * dy;
 
     // More distance is needed if particle is closer to the mouse position.
-    const force = -radius / distance;
+    const force = -speedRadius / distance;
 
-    if (distance < radius) {
+    if (distance < speedRadius) {
       const angle = Math.atan2(dy, dx);
 
       this.vx += force * Math.cos(angle);
       this.vy += force * Math.sin(angle);
     }
 
-    this.vx *= friction
-    this.vy *= friction
+    this.vx *= this.effect.friction
+    this.vy *= this.effect.friction
 
-    this.x += this.vx + (this.originX - this.x) * this.ease;
-    this.y += this.vy + (this.originY - this.y) * this.ease;
+    this.x += Math.floor(this.vx + (this.originX - this.x) * this.effect.ease);
+    this.y += Math.floor(this.vy + (this.originY - this.y) * this.effect.ease);
   }
 
   /**
-   * Provide width and height of the bounds to send the particles too.
+   * Provide width and height of the bounds to send the particles to
+   * before the `update` method starts to bring them home.
+   *
    * @param {number} width
    * @param {number} height
    */
   warp(width, height) {
-    this.x = Math.random() * width
-    this.y = Math.random() * height
+    this.x = Math.floor(Math.random() * width);
+    this.y = Math.floor(Math.random() * height);
   }
 }
 
@@ -108,26 +95,51 @@ class Particle {
  * we are making here.
  */
 class Effect {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  radius = 3000
+  ease = 0.3
+  friction = 0.9
+  mouse = { x: 0, y: 0, vx: 0, vy: 0 };
+  gap = 1;
+  particleSize = 1;
+  imageScale = 1;
+
+  /** @type {Particle[]} */
+  particles = [];
+
   /**
-   * @param {number} width
-   * @param {number} height
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {CanvasImageSource} image
+   * @param {Object} options
+   * @param {number} [options.width=window.innerWidth]
+   * @param {number} [options.height=window.innerHeight]
+   * @param {number} [options.ease=0.3]
+   * @param {number} [options.friction=0.9]
+   * @param {number} [options.gap = 1]
+   * @param {number} [options.imageScale = 1]
+   * @param {number} [options.particleSize = 1] Should be less than gap value
+   * @param {number} [options.radius = 3000] How wide the effect of the mouse position is
    */
-  constructor(width, height) {
-    /** @type number */
-    this.width = width;
-    /** @type number */
-    this.height = height;
+  constructor(ctx, image, { width, height, ease, friction, gap, imageScale, particleSize, radius }) {
+    this.ctx = ctx;
+    this.image = image;
 
-    // //////////////////
+    // ////////////////// optional
 
-    /** @type {Particle[]} */
-    this.particles = [];
-    /** @type number */
-    this.centerX = width * 0.5;
-    /** @type number */
-    this.centerY = height * 0.5;
+    this.width = width || this.width;
+    this.height = height || this.width;
+    this.ease = ease || this.ease;
+    this.friction = friction || this.friction;
+    this.gap = gap || this.gap;
+    this.imageScale = imageScale || this.imageScale;
+    this.particleSize = particleSize || this.particleSize;
+    this.radius = radius || this.radius;
 
-    this.mouse = { x: 0, y: 0, vx: 0, vy: 0 };
+    // ////////////////// computed
+
+    this.centerX = this.width * 0.5;
+    this.centerY = this.height * 0.5;
 
     window.addEventListener('mousemove', event => {
       this.mouse.x = event.x;
@@ -140,20 +152,16 @@ class Effect {
   /**
    * Adds the image, centred, to the canvas, scans the pixel
    * information from it and then removes it.
-   *
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {CanvasImageSource} image
-   * @param {number} imageScale
    */
-  #_getImagePixels(ctx, image, imageScale) {
-    const imageWidth =  Number(image.width) * imageScale;
-    const imageHeight = Number(image.height) * imageScale;
+  #_getImagePixels() {
+    const imageWidth =  Number(this.image.width) * this.imageScale;
+    const imageHeight = Number(this.image.height) * this.imageScale;
     // Centering the image within the Effect.
     // An image larger than the canvas will have it's edges cropped.
     const imageX = this.centerX - imageWidth * 0.5;
     const imageY = this.centerY - imageHeight * 0.5;
 
-    ctx.drawImage(image, imageX, imageY, imageWidth, imageHeight);
+    this.ctx.drawImage(this.image, imageX, imageY, imageWidth, imageHeight);
 
     const scanX = 0;
     const scanY = 0;
@@ -171,7 +179,7 @@ class Effect {
     // other in the array, therefore every adjacent 4 elements
     // in the array are to be considered the colour information
     // for one individual pixel.
-    const scannedImage = ctx.getImageData(
+    const scannedImage = this.ctx.getImageData(
       scanX,
       scanY,
       scanWidth,
@@ -193,39 +201,19 @@ class Effect {
     }
   }
 
-  #_initDefaults = { imageScale: 1, particleSize: 1, gap: 1 };
-
-  /**
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {CanvasImageSource} image
-   * @param {Object} [options]
-   * @param {number} [options.gap = 1]
-   * @param {number} [options.imageScale = 1]
-   * @param {number} [options.particleSize = 1] Should be less than gap value
-   */
-  init(
-    ctx,
-    image,
-    options,
-  ) {
+  init() {
     const itemCountPerPixel = 4; // refers to Uuint8ClampedArray elements per pixel
-
-    const {
-      imageScale,
-      particleSize,
-      gap,
-    } = { ...this.#_initDefaults, ...options };
 
     const {
       pixels,
       width,
       height,
-    } = this.#_getImagePixels(ctx, image, imageScale);
+    } = this.#_getImagePixels();
 
     // Iterated one row at a time. We know the size of the scanned
     // area, both width and height.
-    for (let y = 0; y < height; y += gap) {
-      for (let x = 0; x < width; x += gap) {
+    for (let y = 0; y < height; y += this.gap) {
+      for (let x = 0; x < width; x += this.gap) {
         const rowStartIndex = y * this.width;
         const rowCurrentIndex = rowStartIndex + x;
         const index = rowCurrentIndex * itemCountPerPixel;
@@ -237,17 +225,18 @@ class Effect {
 
         const color = `rgb(${red}, ${green}, ${blue})`;
 
-        this.particles.push(new Particle(x, y, color, particleSize));
+        this.particles.push(new Particle(this, {
+          x,
+          y,
+          color
+        }));
       }
     }
   }
 
-  /**
-   * @param {CanvasRenderingContext2D} ctx
-   */
-  draw(ctx) {
+  draw() {
     for (let i = 0, len = this.particles.length; i < len; i += 1) {
-      this.particles[i].draw(ctx);
+      this.particles[i].draw();
     }
   }
 
@@ -255,15 +244,16 @@ class Effect {
    * Calls update on all items managed by this Effect,
    * in this case the particles.
    */
-  update(radius = 1000, friction = 0.1) {
-    const speed = Math.max(this.mouse.vx, this.mouse.vy);
+  update() {
+    const speed = Math.floor(
+      Math.max(
+        this.mouse.vx > 0 ? this.mouse.vx : this.mouse.vx * -1,
+        this.mouse.vy > 0 ? this.mouse.vy : this.mouse.vy * -1,
+      )
+    );
 
     for (let i = 0, len = this.particles.length; i < len; i += 1) {
-      this.particles[i].update(
-        this.mouse,
-        radius * (speed * 2),
-        friction,
-      );
+      this.particles[i].update(Math.floor(this.radius * (speed * 2)));
     }
   }
 
@@ -278,23 +268,34 @@ class Effect {
 let effect;
 
 const animate = () => {
+  requestAnimationFrame(animate);
   pctx.clearRect(0, 0, pcanvas.width, pcanvas.height);
-  effect.draw(pctx);
-  effect.update();
 
-  // requestAnimationFrame(animate);
+  effect.update();
+  effect.draw();
 };
 
 const src = '../pheasant.jpg';
 
 loadImage(src)
   .then((image) => {
-    effect = new Effect(pcanvas.width, pcanvas.height);
-    effect.init(pctx, image, {
-      imageScale: 0.5,
-      gap: 5,
-      particleSize: 4,
-    });
+    effect = new Effect(
+      pctx,
+      image,
+      {
+        // HERE ARE THE KNOBS!!
+        height: pcanvas.height,
+        width: pcanvas.width,
+        imageScale: 0.3,
+        gap: 5,
+        particleSize: 4,
+        ease: 0.3,
+        friction: 0,
+        radius: 30,
+      },
+    );
+
+    effect.init();
     animate();
 
     const warpButton = document.getElementById('warp-button');
