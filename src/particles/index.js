@@ -181,12 +181,19 @@ class Effect {
    * @param {CanvasRenderingContext2D} ctx
    */
   draw(ctx) {
-    this.particles.forEach(p => p.draw(ctx));
-    // throw new Error("Finished drawing");
+    for (let i = 0, len = this.particles.length; i < len; i += 1) {
+      this.particles[i].draw(ctx);
+    }
   }
 
+  /**
+   * Calls update on all items managed by this Effect,
+   * in this case the particles.
+   */
   update() {
-    this.particles.forEach(particle => particle.update());
+    for (let i = 0, len = this.particles.length; i < length; i += 1) {
+      this.particles[i].update();
+    }
   }
 }
 
