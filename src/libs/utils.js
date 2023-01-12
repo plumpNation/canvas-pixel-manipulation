@@ -77,7 +77,7 @@ const loadImage = (src, unsafe = false) => {
  * @param {boolean} unsafe Set true for insecure tainted canvas
  * @returns {Promise<string>}
  */
-const toDataURL = (src, unsafe = false) => loadImage(src, unsafe).then((image) => {
+const srcURLToDataURL = (src, unsafe = false) => loadImage(src, unsafe).then((image) => {
   const { canvas, ctx } = create2DCanvas();
 
   canvas.height = image.naturalHeight;
@@ -89,3 +89,41 @@ const toDataURL = (src, unsafe = false) => loadImage(src, unsafe).then((image) =
 
   return dataURL;
 });
+
+
+/**
+ * Takes a file input and reads the file contents, converting
+ * them into a base64 string and stripping the `data:` prefix
+ * and any chars up to and including the first `,`.
+ *
+ * @param {HTMLInputElement} input
+ * @param {number} index
+ * @returns {Promise<string>}
+ */
+const fileToDataURL = (input, index) => {
+  var file = input.files?.[index];
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    let base64String;
+
+    if (file === undefined) {
+      throw new TypeError(`File not found in FileList for input at [${index}]`);
+    }
+
+    reader.onload = () => {
+      if (!reader.result || typeof reader.result !== 'string') {
+        throw new Error(`Not able to read the file ${file?.name}`);
+      }
+
+      base64String = reader.result
+        .replace('data:', '')
+        .replace(/^.+,/, '');
+
+      resolve(base64String);
+    }
+
+    reader.readAsDataURL(file);
+  });
+}
