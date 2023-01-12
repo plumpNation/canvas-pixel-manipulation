@@ -8,17 +8,24 @@ class Particle {
    * @param {number} x
    * @param {number} y
    * @param {string} color
-   * @param {number} [size] Defaults to 1 pixel
+   * @param {number} size
+   * @param {number} ease
    */
-  constructor(x, y, color, size) {
+  constructor(
+    x,
+    y,
+    color = 'black',
+    size = 1,
+    ease = 0.1,
+  ) {
     /** @type {number} */
-    this.x = Math.floor(x);
+    this.x = x;
 
     /** @type {number} */
-    this.y = Math.floor(y);
+    this.y = y;
 
     /** @type {string} */
-    this.color = color;
+    this.color = color || 'black';
 
     // //////////////////////
 
@@ -31,11 +38,13 @@ class Particle {
     /** @type {number} */
     this.size = size || 1;
 
-    /** @type {number} */
-    this.vx = 0 // Math.random() * 2 - 1;
+    // /** @type {number} */
+    // this.vx = 0 // Math.random() * 2 - 1;
 
-    /** @type {number} */
-    this.vy = 0 // Math.random() * 2 - 1;
+    // /** @type {number} */
+    // this.vy = 0 // Math.random() * 2 - 1;
+
+    this.ease = ease;
   }
 
   /**
@@ -46,9 +55,51 @@ class Particle {
     ctx.fillRect(this.x, this.y, this.size, this.size);
   }
 
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
+  vx = 0;
+  vy = 0;
+
+  /**
+   *
+   * @param {Effect['mouse']} mouse
+   * @param {number} radius
+   * @param {number} friction
+   */
+  update(mouse, radius, friction) {
+    const dx = mouse.x - this.x;
+    const dy = mouse.y - this.y;
+
+    // Euclidean distance (Pythagoras theorem) between the mouse position and the particle.
+    // i.e.
+    // C² = A² + B²
+    // or
+    // C = Math.sqrt(A² + B²) // worse performance, can change Mouse radius to compensate for not using it.
+    const distance = dx * dx + dy * dy;
+
+    // More distance is needed if particle is closer to the mouse position.
+    const force = -radius / distance;
+
+    if (distance < radius) {
+      const angle = Math.atan2(dy, dx);
+
+      this.vx += force * Math.cos(angle);
+      this.vy += force * Math.sin(angle);
+    }
+
+    this.vx *= friction
+    this.vy *= friction
+
+    this.x += this.vx + (this.originX - this.x) * this.ease;
+    this.y += this.vy + (this.originY - this.y) * this.ease;
+  }
+
+  /**
+   * Provide width and height of the bounds to send the particles too.
+   * @param {number} width
+   * @param {number} height
+   */
+  warp(width, height) {
+    this.x = Math.random() * width
+    this.y = Math.random() * height
   }
 }
 
@@ -75,6 +126,15 @@ class Effect {
     this.centerX = width * 0.5;
     /** @type number */
     this.centerY = height * 0.5;
+
+    this.mouse = { x: 0, y: 0, vx: 0, vy: 0 };
+
+    window.addEventListener('mousemove', event => {
+      this.mouse.x = event.x;
+      this.mouse.y = event.y;
+      this.mouse.vx = event.movementX;
+      this.mouse.vy = event.movementY;
+    });
   }
 
   /**
@@ -124,7 +184,7 @@ class Effect {
     // We could add a canvas outside the view, and used that
     // as the source canvas for this data, if we needed to
     // not 'damage' pixel information on the currect canvas.
-    ctx.clearRect(imageX, imageY, imageWidth, imageHeight);
+    // ctx.clearRect(imageX, imageY, imageWidth, imageHeight);
 
     return {
       pixels: scannedImage.data,
@@ -195,9 +255,21 @@ class Effect {
    * Calls update on all items managed by this Effect,
    * in this case the particles.
    */
-  update() {
+  update(radius = 1000, friction = 0.1) {
+    const speed = Math.max(this.mouse.vx, this.mouse.vy);
+
     for (let i = 0, len = this.particles.length; i < len; i += 1) {
-      this.particles[i].update();
+      this.particles[i].update(
+        this.mouse,
+        radius * (speed * 2),
+        friction,
+      );
+    }
+  }
+
+  warp = () => {
+    for (let i = 0, len = this.particles.length; i < len; i += 1) {
+      this.particles[i].warp(this.width, this.height);
     }
   }
 }
@@ -206,9 +278,10 @@ class Effect {
 let effect;
 
 const animate = () => {
-  // pctx.clearRect(0, 0, pcanvas.width, pcanvas.height);
+  pctx.clearRect(0, 0, pcanvas.width, pcanvas.height);
   effect.draw(pctx);
-  // effect.update();
+  effect.update();
+
   // requestAnimationFrame(animate);
 };
 
@@ -223,4 +296,12 @@ loadImage(src)
       particleSize: 4,
     });
     animate();
+
+    const warpButton = document.getElementById('warp-button');
+
+    if (!warpButton) {
+      throw new Error('No warp button found');
+    }
+
+    warpButton.addEventListener('click', effect.warp);
   });
