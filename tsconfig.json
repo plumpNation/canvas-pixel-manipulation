@@ -2,7 +2,9 @@
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
-    "noEmit": true
+    "checkJs": true,
+    "noEmit": true,
+    "lib": ["esnext", "DOM"]
   },
   "include": ["src/**/*"]
 }

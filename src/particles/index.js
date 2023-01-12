@@ -1,23 +1,7 @@
-// @ts-check
-/** @type {HTMLElement | null} */
-const canvas = document.getElementById('canvas1');
-
-if (!canvas) {
-  throw new Error("canvas was not found");
-}
-
-if (!(canvas instanceof HTMLCanvasElement)) {
-  throw new TypeError("element supplied as canvas must be an HTMLCanvasElement");
-}
-
-const ctx = canvas.getContext('2d');
-
-if (!ctx) {
-  throw new Error("canvas.context could not be created");
-}
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const {
+  canvas: pcanvas,
+  ctx: pctx,
+} = get2DCanvasElement('canvas1');
 
 class Particle {
   /**
@@ -100,9 +84,9 @@ class Effect {
    *
    * @param {CanvasRenderingContext2D} ctx
    * @param {CanvasImageSource} image
+   * @param {number} imageScale
    */
-  getImagePixels(ctx, image) {
-    const imageScale = 0.3;
+  getImagePixels(ctx, image, imageScale) {
     const imageWidth =  Number(image.width) * imageScale;
     const imageHeight = Number(image.height) * imageScale;
     // Centering the image within the Effect.
@@ -135,10 +119,13 @@ class Effect {
       scanHeight,
     );
 
-    // We'll delete the area affected by the scan.
+    // We'll delete the area we wrote the image to.
     // We could clear the entire canvas too, it depends
     // on the effect you want to achieve.
-    ctx.clearRect(scanX, scanY, scanWidth, scanHeight);
+    // We could add a canvas outside the view, and used that
+    // as the source canvas for this data, if we needed to
+    // not 'damage' pixel information on the currect canvas.
+    ctx.clearRect(imageX, imageY, imageWidth, imageHeight);
 
     return {
       pixels: scannedImage.data,
@@ -150,15 +137,16 @@ class Effect {
   /**
    * @param {CanvasRenderingContext2D} ctx
    * @param {CanvasImageSource} image
+   * @param {number} imageScale
    */
-  init(ctx, image) {
+  init(ctx, image, imageScale = 1) {
     const itemCountPerPixel = 4;
 
     const {
       pixels,
       width,
       height,
-    } = this.getImagePixels(ctx, image);
+    } = this.getImagePixels(ctx, image, imageScale);
 
     // Iterated one row at a time. We know the size of the scanned
     // area, both width and height.
@@ -202,19 +190,37 @@ class Effect {
 
 let effect;
 
+const start = new Date().valueOf();
+
+const times = [];
+let runs = 0;
+
 const animate = () => {
+  // runs++;
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  effect.draw(ctx, image1);
+  effect.draw(pctx, image1);
   // effect.update();
 
+  // times.push(new Date().valueOf() - start);
+
+  // if (runs === 10) {
+  //   requestAnimationFrame(() => {
+  //     const max = times.reduce((t, c) => Math.max(t, c));
+  //     const min = times.reduce((t, c) => Math.min(t, c));
+  //     const avg = times.reduce((t, c) => t + c, 0) / times.length;
+
+  //     alert(JSON.stringify({ max, min, avg }, null, 2));
+  //   })
+  // } else {
+  // }
   // requestAnimationFrame(animate);
 };
 
 const image1 = new Image();
 
 image1.addEventListener('load', () => {
-  effect = new Effect(canvas.width, canvas.height);
-  effect.init(ctx, image1);
+  effect = new Effect(pcanvas.width, pcanvas.height);
+  effect.init(pctx, image1);
   animate();
 });
 

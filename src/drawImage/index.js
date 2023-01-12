@@ -1,19 +1,20 @@
-/** @type {HTMLCanvasElement} */
-const canvas = document.getElementById('canvas1');
-const ctx = canvas.getContext('2d');
-
-canvas.width = 800;
-canvas.height = 450;
+const {
+  canvas: dcanvas,
+  ctx: dctx,
+} = get2DCanvasElement('canvas1', {
+  width: 800,
+  height: 450,
+});
 
 const image1 = new Image();
 
 image1.src = '../pheasant.jpg';
 
 image1.addEventListener('load', () => {
-  ctx.drawImage(image1, 0, -200);
+  dctx.drawImage(image1, 0, -200);
 
   const scannedImage =
-    ctx.getImageData(0, 0, canvas.width, canvas.height);
+    dctx.getImageData(0, 0, dcanvas.width, dcanvas.height);
 
   const pixels = scannedImage.data;
 
@@ -29,5 +30,5 @@ image1.addEventListener('load', () => {
   }
 
   scannedImage.data = pixels;
-  ctx.putImageData(scannedImage, 0, 0);
+  dctx.putImageData(scannedImage, 0, 0);
 });
