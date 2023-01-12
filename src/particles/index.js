@@ -1,7 +1,7 @@
 const {
   canvas: pcanvas,
   ctx: pctx,
-} = get2DCanvasElement('canvas1');
+} = get2DCanvas('canvas1');
 
 class Particle {
   /**
@@ -182,46 +182,27 @@ class Effect {
    * in this case the particles.
    */
   update() {
-    for (let i = 0, len = this.particles.length; i < length; i += 1) {
+    for (let i = 0, len = this.particles.length; i < len; i += 1) {
       this.particles[i].update();
     }
   }
 }
 
+/** @type {Effect} */
 let effect;
 
-const start = new Date().valueOf();
-
-const times = [];
-let runs = 0;
-
 const animate = () => {
-  // runs++;
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  effect.draw(pctx, image1);
+  // pctx.clearRect(0, 0, pcanvas.width, pcanvas.height);
+  effect.draw(pctx);
   // effect.update();
-
-  // times.push(new Date().valueOf() - start);
-
-  // if (runs === 10) {
-  //   requestAnimationFrame(() => {
-  //     const max = times.reduce((t, c) => Math.max(t, c));
-  //     const min = times.reduce((t, c) => Math.min(t, c));
-  //     const avg = times.reduce((t, c) => t + c, 0) / times.length;
-
-  //     alert(JSON.stringify({ max, min, avg }, null, 2));
-  //   })
-  // } else {
-  // }
   // requestAnimationFrame(animate);
 };
 
-const image1 = new Image();
+const src = '../pheasant.jpg';
 
-image1.addEventListener('load', () => {
-  effect = new Effect(pcanvas.width, pcanvas.height);
-  effect.init(pctx, image1);
-  animate();
-});
-
-image1.src = '../pheasant.jpg';
+loadImage(src)
+  .then((image) => {
+    effect = new Effect(pcanvas.width, pcanvas.height);
+    effect.init(pctx, image, 0.3);
+    animate();
+  });

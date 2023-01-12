@@ -1,7 +1,7 @@
 const {
   canvas: dcanvas,
   ctx: dctx,
-} = get2DCanvasElement('canvas1', {
+} = get2DCanvas('canvas1', {
   width: 800,
   height: 450,
 });
