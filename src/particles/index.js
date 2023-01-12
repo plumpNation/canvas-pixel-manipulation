@@ -102,12 +102,15 @@ class Effect {
    * @param {CanvasImageSource} image
    */
   getImagePixels(ctx, image) {
+    const imageScale = 0.3;
+    const imageWidth =  Number(image.width) * imageScale;
+    const imageHeight = Number(image.height) * imageScale;
     // Centering the image within the Effect.
     // An image larger than the canvas will have it's edges cropped.
-    const imageX = this.centerX - image.width * 0.5;
-    const imageY = this.centerY - image.height * 0.5;
+    const imageX = this.centerX - imageWidth * 0.5;
+    const imageY = this.centerY - imageHeight * 0.5;
 
-    ctx.drawImage(image, imageX, imageY);
+    ctx.drawImage(image, imageX, imageY, imageWidth, imageHeight);
 
     const scanX = 0;
     const scanY = 0;
