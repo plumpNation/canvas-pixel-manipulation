@@ -6,7 +6,9 @@
  * correctly.
  *
  * @param {string | HTMLCanvasElement} canvasOrId
- * @param {{ width?: number, height?: number }} [options]
+ * @param {Object} [options]
+ * @param {number} [options.width = window.innerWidth]
+ * @param {number} [options.height = window.innerHeight]
  */
 const get2DCanvas = (canvasOrId, options) => {
   const canvas = canvasOrId instanceof HTMLCanvasElement
