@@ -1,6 +1,20 @@
-/** @type {HTMLCanvasElement} */
+// @ts-check
+/** @type {HTMLElement | null} */
 const canvas = document.getElementById('canvas1');
+
+if (!canvas) {
+  throw new Error("canvas was not found");
+}
+
+if (!(canvas instanceof HTMLCanvasElement)) {
+  throw new TypeError("element supplied as canvas must be an HTMLCanvasElement");
+}
+
 const ctx = canvas.getContext('2d');
+
+if (!ctx) {
+  throw new Error("canvas.context could not be created");
+}
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
