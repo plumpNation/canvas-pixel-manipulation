@@ -8,8 +8,9 @@ class Particle {
    * @param {number} x
    * @param {number} y
    * @param {string} color
+   * @param {number} [size] Defaults to 1 pixel
    */
-  constructor(x, y, color) {
+  constructor(x, y, color, size) {
     /** @type {number} */
     this.x = Math.floor(x);
 
@@ -28,7 +29,7 @@ class Particle {
     this.originY = Math.floor(y);
 
     /** @type {number} */
-    this.size = 1;
+    this.size = size || 1;
 
     /** @type {number} */
     this.vx = 0 // Math.random() * 2 - 1;
@@ -74,8 +75,6 @@ class Effect {
     this.centerX = width * 0.5;
     /** @type number */
     this.centerY = height * 0.5;
-    /** @type number */
-    this.gap = 1;
   }
 
   /**
@@ -86,7 +85,7 @@ class Effect {
    * @param {CanvasImageSource} image
    * @param {number} imageScale
    */
-  getImagePixels(ctx, image, imageScale) {
+  #_getImagePixels(ctx, image, imageScale) {
     const imageWidth =  Number(image.width) * imageScale;
     const imageHeight = Number(image.height) * imageScale;
     // Centering the image within the Effect.
@@ -134,24 +133,39 @@ class Effect {
     }
   }
 
+  #_initDefaults = { imageScale: 1, particleSize: 1, gap: 1 };
+
   /**
    * @param {CanvasRenderingContext2D} ctx
    * @param {CanvasImageSource} image
-   * @param {number} imageScale
+   * @param {Object} [options]
+   * @param {number} [options.gap = 1]
+   * @param {number} [options.imageScale = 1]
+   * @param {number} [options.particleSize = 1] Should be less than gap value
    */
-  init(ctx, image, imageScale = 1) {
-    const itemCountPerPixel = 4;
+  init(
+    ctx,
+    image,
+    options,
+  ) {
+    const itemCountPerPixel = 4; // refers to Uuint8ClampedArray elements per pixel
+
+    const {
+      imageScale,
+      particleSize,
+      gap,
+    } = { ...this.#_initDefaults, ...options };
 
     const {
       pixels,
       width,
       height,
-    } = this.getImagePixels(ctx, image, imageScale);
+    } = this.#_getImagePixels(ctx, image, imageScale);
 
     // Iterated one row at a time. We know the size of the scanned
     // area, both width and height.
-    for (let y = 0; y < height; y += this.gap) {
-      for (let x = 0; x < width; x += this.gap) {
+    for (let y = 0; y < height; y += gap) {
+      for (let x = 0; x < width; x += gap) {
         const rowStartIndex = y * this.width;
         const rowCurrentIndex = rowStartIndex + x;
         const index = rowCurrentIndex * itemCountPerPixel;
@@ -163,7 +177,7 @@ class Effect {
 
         const color = `rgb(${red}, ${green}, ${blue})`;
 
-        this.particles.push(new Particle(x, y, color));
+        this.particles.push(new Particle(x, y, color, particleSize));
       }
     }
   }
@@ -203,6 +217,10 @@ const src = '../pheasant.jpg';
 loadImage(src)
   .then((image) => {
     effect = new Effect(pcanvas.width, pcanvas.height);
-    effect.init(pctx, image, 0.3);
+    effect.init(pctx, image, {
+      imageScale: 0.5,
+      gap: 5,
+      particleSize: 4,
+    });
     animate();
   });
